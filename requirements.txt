@@ -1,0 +1,27 @@
+# Core ML / vision
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Computer vision / processing
+opencv-python>=4.7.0
+Pillow>=9.0.0
+numpy>=1.24.0
+scikit-learn>=1.2.0
+
+# Optional higher-level face/emotion model
+deepface>=0.0.90
+
+# Backend / Frontend
+fastapi>=0.95.0
+uvicorn[standard]>=0.22.0
+requests>=2.31.0
+streamlit>=1.30.0
+streamlit-webrtc>=0.64.5
+
+# Database & logging
+sqlalchemy>=2.0.45,<3.0
+alembic>=1.11.0
+
+# Utilities
+tqdm>=4.65.0
+matplotlib>=3.8.0
