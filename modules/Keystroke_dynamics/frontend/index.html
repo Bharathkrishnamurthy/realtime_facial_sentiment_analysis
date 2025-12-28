@@ -1,0 +1,120 @@
+<script>
+/*
+ Improved keystroke capture:
+ - records keydown, keyup, paste, focus, blur
+ - captures textarea value BEFORE a paste (on paste event) and clipboard length
+ - sends final textarea value as "final_text" to backend for extra checks
+*/
+const events = [];
+const ta = document.getElementById('answer');
+const userIdInput = document.getElementById('userId');
+const questionInput = document.getElementById('questionId');
+const out = document.getElementById('output');
+
+function pushEvent(ev) {
+  // reduce payload size: include only necessary fields
+  events.push({
+    type: ev.type,
+    key: ev.key || null,
+    ts: performance.now(),
+    pos: ev.target ? ev.target.selectionStart : null,
+    selLen: ev.target ? (ev.target.selectionEnd - ev.target.selectionStart) : null,
+    clipboardLength: ev.clipboardData && ev.clipboardData.getData ? (ev.clipboardData.getData('text')||'').length : undefined,
+  });
+}
+
+// keep a snapshot of last textarea value (for before/after comparisons)
+let lastTextValue = ta.value || '';
+
+ta.addEventListener('keydown', (e) => pushEvent(e));
+ta.addEventListener('keyup', (e) => pushEvent(e));
+ta.addEventListener('focus', (e) => events.push({type:'focus', ts: performance.now()}));
+ta.addEventListener('blur', (e) => events.push({type:'blur', ts: performance.now()}));
+
+// On paste: capture clipboard length and the inserted text, and record before+after
+ta.addEventListener('paste', (e) => {
+  // record a paste event
+  const clip = (e.clipboardData && e.clipboardData.getData) ? e.clipboardData.getData('text') : null;
+  events.push({
+    type: 'paste',
+    ts: performance.now(),
+    clipboardLength: clip ? clip.length : null,
+    inserted_text: clip
+  });
+
+  // also record a manual "input_snapshot" event so backend can compare before/after
+  events.push({
+    type: 'input_snapshot',
+    ts: performance.now(),
+    before_value: lastTextValue,
+    // after_value will be updated on next input event - but we also schedule a short timeout to capture it
+  });
+
+  // small timeout to capture textarea after paste
+  setTimeout(() => {
+    const after = ta.value;
+    events.push({
+      type: 'input_snapshot_after',
+      ts: performance.now(),
+      after_value: after
+    });
+    // update lastTextValue now
+    lastTextValue = after;
+  }, 10);
+});
+
+// For general typing (non-paste), keep lastTextValue up to date
+ta.addEventListener('input', (e) => {
+  // capture only the fact input changed, and the new value
+  events.push({
+    type: 'input',
+    ts: performance.now(),
+    value_length: ta.value.length
+  });
+  lastTextValue = ta.value;
+});
+
+document.getElementById('clearBtn').onclick = () => {
+  events.length = 0;
+  ta.value = '';
+  lastTextValue = '';
+  out.textContent = 'Cleared.';
+};
+
+document.getElementById('createUserBtn').onclick = async () => {
+  const resp = await fetch('http://127.0.0.1:9000/api/create_user', {method:'POST'});
+  const j = await resp.json();
+  userIdInput.value = j.user_id;
+  out.textContent = 'New user created: ' + j.user_id;
+};
+
+document.getElementById('submitBtn').onclick = async () => {
+  const userId = userIdInput.value;
+  if (!userId) { alert('Set user id'); return; }
+  const questionId = questionInput.value || 'Q1';
+  const enroll = document.getElementById('enrollMode').checked;
+
+  // include final textarea value so backend can analyze insertion diffs server-side
+  const payload = {
+    user_id: userId,
+    question_id: questionId,
+    events: events,
+    final_text: ta.value,
+    device_info: navigator.userAgent,
+    enrollment: enroll
+  };
+
+  out.textContent = 'Sending... events=' + events.length;
+  try {
+    const resp = await fetch('http://127.0.0.1:9000/api/submit_events', {
+      method:'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const j = await resp.json();
+    out.textContent = 'Response:\\n' + JSON.stringify(j, null, 2);
+  } catch (err) {
+    out.textContent = 'Error: ' + err;
+  }
+};
+</script>

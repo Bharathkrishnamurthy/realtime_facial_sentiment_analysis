@@ -1,0 +1,522 @@
+2025-11-24 22:28:41,091 ERROR DatabaseError during integrity_check; backing up and recreating DB
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 102, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+2025-11-24 22:28:41,091 ERROR DatabaseError during integrity_check; backing up and recreating DB
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 102, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+2025-11-24 22:28:41,091 WARNING Backed up corrupt DB C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db -> C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db.corrupt_backup_20251124T165841Z
+2025-11-24 22:28:41,091 WARNING Backed up corrupt DB C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db -> C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db.corrupt_backup_20251124T165841Z
+2025-11-24 22:28:41,091 ERROR init_db() failed: database disk image is malformed
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 102, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 111, in init_db
+    _create_fresh_db_from_schema(conn2)
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 73, in _create_fresh_db_from_schema
+    cur.executescript(sql)
+sqlite3.DatabaseError: database disk image is malformed
+2025-11-24 22:28:41,091 ERROR init_db() failed: database disk image is malformed
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 102, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 111, in init_db
+    _create_fresh_db_from_schema(conn2)
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 73, in _create_fresh_db_from_schema
+    cur.executescript(sql)
+sqlite3.DatabaseError: database disk image is malformed
+2025-11-24 22:31:42,425 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:31:42,425 ERROR DatabaseError during integrity_check; backing up and recreating DB
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 117, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+2025-11-24 22:31:42,426 ERROR DatabaseError during integrity_check; backing up and recreating DB
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 117, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+2025-11-24 22:31:42,430 WARNING Backed up corrupt DB C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db -> C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db.corrupt_backup_20251124T170142Z
+2025-11-24 22:31:42,430 WARNING Backed up corrupt DB C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db -> C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db.corrupt_backup_20251124T170142Z
+2025-11-24 22:31:42,430 ERROR Failed to remove corrupt DB file before recreate
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 117, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 129, in init_db
+    os.remove(DB_PATH)
+PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\Dell\\Desktop\\Keystroke_dynamics\\backend\\app\\..\\keystroke.db'
+2025-11-24 22:31:42,430 INFO Removed corrupt DB file: C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db
+2025-11-24 22:31:42,520 INFO Created fresh DB at C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db after corruption
+2025-11-24 22:31:42,536 INFO Created fresh DB at C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db after corruption
+2025-11-24 22:31:44,324 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:31:44,330 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:31:44,343 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:32:18,275 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:32:28,256 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:33:17,705 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:38:10,179 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:38:10,193 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:38:53,471 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:38:53,471 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:38:53,474 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:38:53,568 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:38:55,396 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:38:55,396 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:38:55,426 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:38:55,444 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:39:20,588 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:39:20,588 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:39:20,609 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:39:20,651 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:39:49,175 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:39:49,185 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:39:49,190 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:39:49,261 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:40:02,130 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:40:02,131 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:40:02,131 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:40:02,131 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:40:12,643 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:59:49,822 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:59:49,822 INFO PRAGMA integrity_check -> ok
+2025-11-24 22:59:49,837 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:15,276 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:15,280 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:15,280 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:15,307 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:15,366 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:42,082 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:42,082 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:42,085 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:42,085 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:42,090 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:59,547 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:59,547 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:59,547 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:00:59,562 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:01:26,467 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:01:26,471 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:01:26,493 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:01:26,496 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:01:27,977 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:01:27,979 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:01:27,982 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:01:27,982 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:01:28,027 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:01:47,139 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:05:53,943 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:05:53,945 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:05:53,954 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:05:53,963 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:17,139 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:17,139 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:17,141 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:17,141 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:17,145 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:17,150 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:43,763 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:43,766 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:43,768 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:43,768 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:43,781 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:06:43,781 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:07:01,883 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:07:01,892 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:07:01,896 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:07:01,914 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:07:01,915 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:07:01,986 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:14:32,989 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:17:09,400 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:30,142 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:30,529 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:30,584 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:30,585 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:30,589 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:30,613 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:30,702 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:30,782 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:51,214 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:51,877 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:51,877 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:51,905 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:51,943 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:51,972 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:52,006 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:52,008 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:32:52,943 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:37:49,545 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:37:49,554 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:37:49,592 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:37:49,791 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:37:49,842 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:37:49,849 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:38:06,688 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:38:06,690 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:38:06,692 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:38:06,693 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:38:06,696 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:38:06,713 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:38:06,716 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:38:06,780 INFO PRAGMA integrity_check -> ok
+2025-11-24 23:50:49,168 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:06,279 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:06,451 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:06,689 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:06,779 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:06,905 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:06,911 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:07,118 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:07,188 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:07,340 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:08,223 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:08,307 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:19:37,894 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:37,030 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:37,033 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:37,039 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:37,057 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:37,061 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:37,093 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:37,191 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:37,215 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:37,219 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:37,384 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:39,596 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:39,601 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:39,674 ERROR DatabaseError during integrity_check; backing up and recreating DB
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 117, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+2025-11-25 00:25:39,731 ERROR DatabaseError during integrity_check; backing up and recreating DB
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 117, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+2025-11-25 00:25:39,755 WARNING Backed up corrupt DB C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db -> C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db.corrupt_backup_20251124T185539Z
+2025-11-25 00:25:39,756 ERROR Failed to remove corrupt DB file before recreate
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 117, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 129, in init_db
+    os.remove(DB_PATH)
+PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\Dell\\Desktop\\Keystroke_dynamics\\backend\\app\\..\\keystroke.db'
+2025-11-25 00:25:39,781 ERROR init_db() failed: database disk image is malformed
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 117, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 136, in init_db
+    _create_fresh_db_from_schema(conn2)
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 81, in _create_fresh_db_from_schema
+    cur.executescript(sql)
+sqlite3.DatabaseError: database disk image is malformed
+2025-11-25 00:25:39,755 ERROR Failed to backup corrupt DB: [WinError 32] The process cannot access the file because it is being used by another process
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 117, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 64, in _backup_corrupt_db
+    shutil.copy2(DB_PATH, bak_name)
+  File "C:\Users\Dell\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 460, in copy2
+    _winapi.CopyFile2(src_, dst_, flags)
+PermissionError: [WinError 32] The process cannot access the file because it is being used by another process
+2025-11-25 00:25:39,812 INFO Removed corrupt DB file: C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db
+2025-11-25 00:25:39,918 INFO Created fresh DB at C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\..\keystroke.db after corruption
+2025-11-25 00:25:40,800 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:40,842 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:40,860 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:40,875 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:41,241 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:41,316 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:41,988 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:42,014 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:42,023 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:25:42,193 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:26:06,786 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:26:06,796 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:26:06,821 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:26:06,847 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:26:06,853 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:26:06,858 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:26:07,068 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:26:07,069 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:26:07,070 INFO PRAGMA integrity_check -> ok
+2025-11-25 00:26:07,166 INFO PRAGMA integrity_check -> ok
+2025-11-25 08:19:04,455 INFO PRAGMA integrity_check -> ok
+2025-11-25 08:32:50,688 INFO PRAGMA integrity_check -> ok
+2025-11-25 08:33:19,944 INFO PRAGMA integrity_check -> ok
+2025-11-25 08:58:42,840 INFO PRAGMA integrity_check -> ok
+2025-11-25 11:04:22,886 INFO PRAGMA integrity_check -> ok
+2025-11-25 11:21:42,073 INFO PRAGMA integrity_check -> ok
+2025-11-25 11:22:18,616 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:42:53,730 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:42:53,810 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:42:53,846 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:42:55,321 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:46:30,840 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:46:30,842 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:46:30,874 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:46:30,874 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:46:39,865 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:46:39,867 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:46:39,969 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:46:39,969 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:47:31,098 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:47:31,106 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:47:31,106 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:47:31,122 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:47:48,682 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:47:48,682 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:47:48,682 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:47:48,710 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:53:31,555 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:53:31,566 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:53:31,568 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:53:31,575 INFO PRAGMA integrity_check -> ok
+2025-11-25 19:58:15,583 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:39:50,450 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:39:50,450 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:39:50,459 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:39:50,459 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:39:50,461 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:40:06,280 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:43:41,654 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:43:41,671 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:43:41,678 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:43:41,680 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:43:41,691 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:43:41,696 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:44:48,193 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:44:48,224 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:44:48,288 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:44:48,313 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:44:48,317 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:44:48,376 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:46:28,673 INFO PRAGMA integrity_check -> ok
+2025-11-25 20:56:57,317 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:03:21,449 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:06:25,808 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:12:53,088 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:17:52,428 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,498 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,500 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,502 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,502 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,508 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,508 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,516 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,517 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,524 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,521 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,530 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:37:46,650 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,190 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,209 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,260 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,296 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,323 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,326 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,331 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,439 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,471 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,538 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,604 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:39:16,633 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,546 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,546 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,548 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,548 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,548 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,550 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,551 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,556 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,561 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,570 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,575 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:48:29,659 INFO PRAGMA integrity_check -> ok
+2025-11-25 21:49:19,354 INFO PRAGMA integrity_check -> ok
+2025-11-25 22:09:29,760 INFO PRAGMA integrity_check -> ok
+2025-11-25 22:16:06,442 INFO PRAGMA integrity_check -> ok
+2025-11-25 22:33:04,324 INFO PRAGMA integrity_check -> ok
+2025-11-25 22:41:52,444 INFO PRAGMA integrity_check -> ok
+2025-11-25 22:47:29,183 INFO PRAGMA integrity_check -> ok
+2025-11-25 22:49:49,673 INFO PRAGMA integrity_check -> ok
+2025-11-25 22:58:50,954 INFO PRAGMA integrity_check -> ok
+2025-11-25 23:02:44,427 INFO PRAGMA integrity_check -> ok
+2025-11-25 23:04:17,843 INFO PRAGMA integrity_check -> ok
+2025-11-25 23:28:40,989 INFO PRAGMA integrity_check -> ok
+2025-11-25 23:31:06,016 INFO PRAGMA integrity_check -> ok
+2025-11-25 23:50:46,100 INFO PRAGMA integrity_check -> ok
+2025-11-26 00:01:28,995 INFO PRAGMA integrity_check -> ok
+2025-11-26 00:07:51,962 INFO PRAGMA integrity_check -> ok
+2025-11-26 00:23:10,295 INFO PRAGMA integrity_check -> ok
+2025-11-26 00:43:32,739 INFO PRAGMA integrity_check -> ok
+2025-11-26 01:23:06,262 INFO PRAGMA integrity_check -> ok
+2025-11-26 01:23:06,446 INFO PRAGMA integrity_check -> ok
+2025-11-26 01:23:06,450 INFO PRAGMA integrity_check -> ok
+2025-11-26 01:23:06,531 INFO PRAGMA integrity_check -> ok
+2025-11-26 01:23:06,626 INFO PRAGMA integrity_check -> ok
+2025-11-26 01:23:06,771 INFO PRAGMA integrity_check -> ok
+2025-11-26 01:23:06,967 INFO PRAGMA integrity_check -> ok
+2025-11-26 02:26:11,917 INFO PRAGMA integrity_check -> ok
+2025-11-26 02:37:00,335 INFO PRAGMA integrity_check -> ok
+2025-11-26 02:52:51,429 INFO PRAGMA integrity_check -> ok
+2025-11-26 02:52:51,432 INFO PRAGMA integrity_check -> ok
+2025-11-26 02:52:52,391 INFO PRAGMA integrity_check -> ok
+2025-11-26 02:52:52,391 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:05:08,495 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:07:14,341 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:17:22,996 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:40:21,658 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:40:21,669 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:40:21,799 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:40:21,815 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:40:21,856 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:40:31,808 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:40:31,824 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:40:31,829 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:40:31,842 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:53:14,635 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:53:14,635 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:53:14,641 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:53:42,459 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:53:42,470 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:53:42,474 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:53:42,481 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:53:42,485 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:54:14,275 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:54:14,284 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:54:14,299 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:54:14,300 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:54:14,314 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:54:45,567 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:54:45,578 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:54:45,581 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:54:45,586 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:54:45,592 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:55:18,920 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:43,373 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:43,398 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:43,405 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:43,418 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:43,429 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:43,432 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:44,703 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:44,708 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:44,712 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:44,713 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:44,749 INFO PRAGMA integrity_check -> ok
+2025-11-26 03:58:44,758 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:18:09,713 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:17,602 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:17,602 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:17,604 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:17,609 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:17,619 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:17,629 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:18,267 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:18,994 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:19,002 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:19,005 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:19,008 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:19,019 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:24:19,028 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:26:44,852 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:26:44,852 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:26:44,875 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:26:44,891 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:26:44,894 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:26:44,899 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:26:44,911 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:40,708 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:40,709 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:40,710 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:40,723 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:40,759 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:40,761 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:40,788 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:42,071 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:42,082 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:42,088 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:42,096 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:42,121 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:42,139 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:27:42,164 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:34:16,400 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:34:16,402 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:34:16,403 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:34:16,403 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:34:16,403 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:34:16,418 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:34:34,224 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:44:23,003 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:44:23,003 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:44:23,003 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:44:23,006 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:44:23,007 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:54:04,899 INFO PRAGMA integrity_check -> ok
+2025-11-26 04:55:35,333 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:03:25,554 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:03:25,554 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:03:25,557 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:03:25,560 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:03:25,561 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:03:25,565 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:34:43,601 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:34:43,601 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:34:43,601 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:34:43,614 INFO PRAGMA integrity_check -> ok
+2025-11-26 05:34:50,114 INFO PRAGMA integrity_check -> ok
+2025-11-26 10:49:35,008 INFO PRAGMA integrity_check -> ok
+2025-11-26 10:53:49,826 INFO PRAGMA integrity_check -> ok
+2025-11-26 11:26:10,669 INFO PRAGMA integrity_check -> ok
+2025-11-26 11:26:17,598 INFO PRAGMA integrity_check -> ok
+2025-11-26 11:35:04,114 INFO PRAGMA integrity_check -> ok
+2025-11-26 11:35:04,126 INFO PRAGMA integrity_check -> ok
+2025-11-26 11:35:44,476 INFO PRAGMA integrity_check -> ok
+2025-11-28 11:48:07,375 INFO PRAGMA integrity_check -> ok

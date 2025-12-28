@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\candidate_routes.py", line 20, in start_test
+    questions = session_service.get_questions_for_test(db, test_id)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'app.session_service' has no attribute 'get_questions_for_test'

@@ -6,9 +6,13 @@ from collections import Counter, defaultdict
 from ultralytics import YOLO
 
 # -------------------- CONFIG --------------------
-st.set_page_config(page_title="AI Proctoring System", layout="wide")
+st.set_page_config(
+    page_title="AI Proctoring System",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
-CONF_THRESHOLD = 0.5
+CONF_THRESHOLD = 0.25   # LOWERED → detect small phones
 MAL_OBJECTS = ["cell phone", "laptop", "tablet"]
 
 # -------------------- LOAD MODELS --------------------
@@ -30,14 +34,17 @@ if "running" not in st.session_state:
     st.session_state.running = False
 
 # -------------------- UI --------------------
-st.title("🛡️ Real-Time AI Proctoring System")
+st.markdown(
+    "<h1 style='text-align:center'>🛡️ Real-Time AI Proctoring System</h1>",
+    unsafe_allow_html=True
+)
 
-col1, col2 = st.columns([2, 1])
+col1, col2 = st.columns([3, 1])
 
 with col2:
-    st.subheader("🎛️ Controls")
-    start = st.button("▶ Start Monitoring")
-    stop = st.button("⏹ Stop & Generate Report")
+    st.subheader("🎛 Controls")
+    start = st.button("▶ Start Monitoring", use_container_width=True)
+    stop = st.button("⏹ Stop & Generate Report", use_container_width=True)
 
 # -------------------- START SESSION --------------------
 if start:
@@ -55,12 +62,13 @@ if st.session_state.running:
         if not ret:
             break
 
+        frame = cv2.resize(frame, (1280, 720))  # FULL SCREEN EFFECT
         timestamp = time.time()
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_detector.detectMultiScale(gray, 1.3, 5)
 
-        # -------- FACE BOXES (NO TEXT, NO CONFIDENCE) --------
+        # -------- FACE BOXES --------
         for (x, y, w, h) in faces:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
 
@@ -69,6 +77,7 @@ if st.session_state.running:
 
         detected_objects = []
         detected_confidences = []
+        malpractice_flag = False
 
         for box in results.boxes:
             cls = int(box.cls[0])
@@ -76,18 +85,32 @@ if st.session_state.running:
             conf = float(box.conf[0])
 
             if label in MAL_OBJECTS:
+                malpractice_flag = True
                 detected_objects.append(label)
                 detected_confidences.append(conf)
 
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
-        # -------- LOGGING (BACKEND ONLY) --------
+        # -------- MALPRACTICE ALERT (LIVE) --------
+        if malpractice_flag:
+            cv2.putText(
+                frame,
+                "📵 MALPRACTICE: PHONE / DEVICE DETECTED",
+                (30, 60),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1.1,
+                (0, 0, 255),
+                3
+            )
+
+        # -------- LOGGING --------
         st.session_state.logs.append({
             "time": timestamp,
             "faces": len(faces),
             "objects": detected_objects,
-            "confidences": detected_confidences
+            "confidences": detected_confidences,
+            "malpractice": malpractice_flag
         })
 
         frame_window.image(frame, channels="BGR")
@@ -106,48 +129,59 @@ if not st.session_state.running and st.session_state.logs:
     logs = st.session_state.logs
     duration = int(time.time() - st.session_state.start_time)
 
-    # -------- FACE ANALYSIS --------
     multiple_faces = sum(1 for l in logs if l["faces"] > 1)
     no_face = sum(1 for l in logs if l["faces"] == 0)
+    malpractice_events = sum(1 for l in logs if l["malpractice"])
 
-    # -------- OBJECT + CONFIDENCE ANALYSIS --------
     obj_counter = Counter()
     confidence_map = defaultdict(list)
-    multi_device_events = 0
 
     for l in logs:
-        objs = l["objects"]
-        confs = l["confidences"]
-
-        if len(set(objs)) > 1:
-            multi_device_events += 1
-
-        for o, c in zip(objs, confs):
+        for o, c in zip(l["objects"], l["confidences"]):
             obj_counter[o] += 1
             confidence_map[o].append(c)
 
-    # -------- DISPLAY REPORT --------
+    # -------- SUMMARY --------
     st.subheader("📊 Session Summary")
     st.write(f"⏱ Duration: **{duration} seconds**")
-    st.write(f"👤 Multiple faces detected: **{multiple_faces} times**")
-    st.write(f"🚫 No face detected: **{no_face} times**")
+    st.write(f"👤 Multiple Faces Detected: **{multiple_faces} times**")
+    st.write(f"🚫 No Face Detected: **{no_face} times**")
+    st.write(f"📵 Malpractice Events: **{malpractice_events} times**")
 
-    st.subheader("📱 Malpractice Object Detection (with Confidence)")
+    # -------- OBJECT DETAILS --------
+    st.subheader("📱 Device Detection Analysis")
 
     if obj_counter:
         for obj, count in obj_counter.items():
             avg_conf = np.mean(confidence_map[obj])
             st.write(
-                f"**{obj}** → Detected **{count} times**, "
-                f"Average Confidence: **{avg_conf:.2f}**"
+                f"**{obj.upper()}** → Detected **{count} times**, "
+                f"Avg Confidence: **{avg_conf:.2f}**"
             )
     else:
-        st.write("✅ No electronic devices detected.")
+        st.success("✅ No electronic devices detected")
 
-    st.write(f"🔁 Multiple device events: **{multi_device_events}**")
+    # -------- CONFIDENCE VERDICT --------
+    st.subheader("🧠 Candidate Confidence Verdict")
+
+    if multiple_faces == 0 and no_face == 0 and malpractice_events == 0:
+        confidence_score = round(
+            1 - (len(logs) * 0.001), 2
+        )
+        st.success(
+            f"✅ Candidate is CONFIDENT\n\n"
+            f"📊 Confidence Score: **{confidence_score}**\n\n"
+            f"✔ No malpractice\n"
+            f"✔ Single face throughout\n"
+            f"✔ Continuous presence"
+        )
+    else:
+        st.error(
+            "🚨 Candidate behavior indicates MALPRACTICE or IRREGULARITIES.\n\n"
+            "Please review flagged timestamps."
+        )
 
     st.info(
-        "Confidence scores were intentionally hidden during live monitoring. "
-        "All confidence values shown here are aggregated from backend inference "
-        "to avoid bias and misleading real-time interpretation."
+        "Confidence values are computed post-session only "
+        "to avoid real-time bias."
     )

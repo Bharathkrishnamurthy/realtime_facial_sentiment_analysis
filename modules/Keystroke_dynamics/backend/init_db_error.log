@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 117, in init_db
+    res = cur.execute("PRAGMA integrity_check").fetchall()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: database disk image is malformed
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\main.py", line 47, in on_startup
+    init_db()
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 136, in init_db
+    _create_fresh_db_from_schema(conn2)
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\database.py", line 81, in _create_fresh_db_from_schema
+    cur.executescript(sql)
+sqlite3.DatabaseError: database disk image is malformed

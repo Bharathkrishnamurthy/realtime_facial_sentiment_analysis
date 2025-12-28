@@ -1,0 +1,20 @@
+from pydantic import BaseModel
+from typing import List, Optional
+
+class Event(BaseModel):
+    type: str            # 'keydown', 'keyup', 'paste', 'focus', 'blur'
+    key: Optional[str] = None
+    ts: float            # performance.now() from client (ms)
+    pos: Optional[int] = None
+    selLen: Optional[int] = None
+    clipboardLength: Optional[int] = None
+
+class SubmitEventsRequest(BaseModel):
+    user_id: str
+    question_id: Optional[str] = None
+    events: List[Event]
+    device_info: Optional[str] = None
+    enrollment: Optional[bool] = False
+    final_text: Optional[str] = None   # << added
+    test_id: Optional[str] = None      # << added
+    phase: Optional[str] = None        # << added

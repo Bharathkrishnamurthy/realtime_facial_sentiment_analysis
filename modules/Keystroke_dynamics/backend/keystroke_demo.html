@@ -1,0 +1,523 @@
+# Second attempt to overwrite /mnt/data/keystroke_demo.html with updated demo UI.
+html = r"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Keystroke Demo — Patched & Persisted</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background:#f7f9fc; }
+    .editor { font-family: Menlo, Monaco, Consolas, monospace; font-size:14px; line-height:1.5; }
+    .panel { background: white; border-radius:8px; padding:14px; box-shadow:0 6px 18px rgba(20,30,60,0.06); }
+    .status-dot { width:12px; height:12px; border-radius:50%; display:inline-block; margin-right:8px; }
+    .status-green { background:#28a745; } .status-yellow { background:#ffc107; } .status-red { background:#dc3545; }
+    .log { height:200px; overflow:auto; background:#0b1220; color:#cfe8ff; padding:8px; border-radius:6px; font-family:monospace; font-size:12px; }
+    .small { font-size:0.9rem; }
+    .btn-ghost { background:transparent; border:1px solid #dde6f2; }
+    code { background: #f1f5f9; padding:4px 6px; border-radius:4px; }
+  </style>
+</head>
+<body>
+<div class="container py-4">
+  <div class="row mb-3 align-items-center">
+    <div class="col-8">
+      <h1 class="h3 m-0">Keystroke Demo — Live Compare</h1>
+      <div class="small text-muted">Type in the editor. We'll compute rhythm features and compare with saved templates.</div>
+    </div>
+    <div class="col-4 text-end small">
+      <span id="serverStatus" class="me-2">Backend: <strong id="backendHost">http://127.0.0.1:9000</strong></span>
+      <button id="openSwagger" class="btn btn-sm btn-outline-primary">Open API Docs</button>
+    </div>
+  </div>
+
+  <!-- USER SELECTION -->
+  <div class="mb-3 panel">
+    <div class="mb-2"><strong>User</strong></div>
+    <div class="d-flex gap-2 mb-2">
+      <button id="newUserBtn" class="btn btn-primary btn-sm">I'm new — create ID</button>
+      <input id="existingUserInput" class="form-control form-control-sm" placeholder="Or paste your user id" />
+      <button id="useExistingBtn" class="btn btn-outline-secondary btn-sm">Use</button>
+    </div>
+    <div class="small text-muted">Active user: <code id="activeUserId">—</code></div>
+  </div>
+
+  <div class="row g-3">
+    <!-- LEFT: templates -->
+    <div class="col-lg-3">
+      <div class="panel">
+        <div class="mb-2"><strong>Templates</strong></div>
+        <div class="small text-muted mb-2">Saved templates (server or local) — pick one to compare</div>
+        <div class="mb-2">
+          <select id="templateList" class="form-select form-select-sm"></select>
+        </div>
+        <div class="d-grid gap-2">
+          <button id="saveTemplateBtn" class="btn btn-sm btn-success">Save current as template</button>
+          <button id="refreshTemplatesBtn" class="btn btn-sm btn-outline-secondary">Refresh templates</button>
+        </div>
+        <hr/>
+        <div class="small text-muted">Compare results</div>
+        <div id="compareResult" style="min-height:70px;font-weight:600;margin-top:8px;">No comparison yet</div>
+      </div>
+    </div>
+
+    <!-- CENTER: editor -->
+    <div class="col-lg-6">
+      <div class="panel">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div><strong>Type here</strong></div>
+          <div class="small text-muted">We capture keystroke events live</div>
+        </div>
+        <textarea id="answerBox" class="form-control editor" rows="12" placeholder="Type something..."></textarea>
+        <div class="d-flex gap-2 mt-3">
+          <button id="submitBtn" class="btn btn-success">Done (compute & compare)</button>
+          <button id="clearBtn" class="btn btn-outline-secondary">Clear</button>
+          <div class="ms-auto small text-muted align-self-center">Events: <span id="eventsCount">0</span></div>
+        </div>
+        <div id="warnings" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: live status / logs -->
+    <div class="col-lg-3">
+      <div class="panel mb-3">
+        <div class="d-flex align-items-center mb-2">
+          <div id="liveStatusDot" class="status-dot status-yellow"></div>
+          <div>
+            <div><strong>Live similarity</strong></div>
+            <div class="small text-muted" id="liveScoreText">—</div>
+          </div>
+        </div>
+        <hr/>
+        <div class="small text-muted mb-1">Logs</div>
+        <div id="logArea" class="log"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ---------- CONFIG & TUNING ---------- */
+const BACKEND = "http://127.0.0.1:9000";
+const RHYTHM_SIMILARITY_THRESHOLD = 85;  // tuned stricter
+const TEXT_SIMILARITY_THRESHOLD = 0.85;  // 0..1
+const MIN_CHARS_TO_COMPARE = 20; // require some length
+
+/* ---------- UTILS ---------- */
+function safeLog(msg){
+  const la = document.getElementById('logArea');
+  const t = new Date().toISOString().substr(11,8);
+  if(la) la.innerText = `[${t}] ${msg}\n` + la.innerText;
+  else console.log(msg);
+}
+function setActiveUserId(uid){
+  if(!uid){
+    localStorage.removeItem('ke_user_id');
+    document.getElementById('activeUserId').innerText='—';
+    return;
+  }
+  localStorage.setItem('ke_user_id', uid);
+  document.getElementById('activeUserId').innerText = uid;
+}
+
+/* ---------- LEVENSHTEIN for text similarity ---------- */
+function levenshtein(a,b){
+  if(!a||!b) return Math.max(a? a.length:0, b? b.length:0);
+  const m=a.length,n=b.length;
+  const dp = Array.from({length:m+1},(_,i)=>i);
+  for(let j=1;j<=n;j++){
+    let prev = dp[0];
+    dp[0]=j;
+    for(let i=1;i<=m;i++){
+      let cur = dp[i];
+      const cost = a[i-1]===b[j-1]?0:1;
+      dp[i] = Math.min(dp[i]+1, dp[i-1]+1, prev+cost);
+      prev = cur;
+    }
+  }
+  return dp[m];
+}
+function textSimilarity(a,b){
+  const maxLen = Math.max(a.length,b.length);
+  if(maxLen===0) return 1;
+  const dist = levenshtein(a,b);
+  return 1 - (dist / maxLen);
+}
+
+/* ---------- FEATURE EXTRACTION (front-end, for UI) ---------- */
+function extract_features(events){
+  const holds=[]; const lastDown={};
+  for(const e of events){
+    if(e.type==='keydown') lastDown[e.key]=e.ts;
+    else if(e.type==='keyup'){
+      if(lastDown[e.key]){
+        holds.push(e.ts - lastDown[e.key]);
+        delete lastDown[e.key];
+      }
+    }
+  }
+  const dd=[]; let prevDown=null;
+  for(const e of events){
+    if(e.type==='keydown'){
+      if(prevDown!==null && e.ts!=null) dd.push(e.ts - prevDown);
+      prevDown = e.ts;
+    }
+  }
+  const mean = arr => arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  const std = arr => {
+    if(!arr.length) return null;
+    const m=mean(arr);
+    return Math.sqrt(arr.reduce((s,x)=>s+(x-m)*(x-m),0)/arr.length);
+  };
+  const pauses_over_200 = (()=>{let c=0; for(let i=1;i<events.length;i++){ const gap = events[i].ts - events[i-1].ts; if(gap>200) c++; } return c; })();
+  const num_backspaces = events.filter(e=> e.type==='keydown' && (e.key==='Backspace' || e.key==='Delete')).length;
+  const duration = events.length? (events[events.length-1].ts - events[0].ts) : 0;
+  const cpm = duration>0? Math.round(((events.filter(e=>e.type==='keydown' && (e.key && e.key.length===1)).length) / (duration/60000))) : null;
+  return {
+    mean_hold: mean(holds),
+    std_hold: std(holds),
+    mean_dd: mean(dd),
+    std_dd: std(dd),
+    pauses_over_200: pauses_over_200,
+    cpm: cpm,
+    backspace_rate: num_backspaces / Math.max(1, events.filter(e=>e.type==='keydown').length),
+    paste_count: window._pasteCount || 0,
+    blur_count: window._blurCount || 0,
+    num_events: events.length,
+    duration_ms: duration
+  };
+}
+
+/* ---------- SIMILARITY (tuned) ---------- */
+function paramSimilarity(a,b){
+  if(a==null || b==null) return 0.45;
+  if(a===b) return 1;
+  const denom = Math.max(Math.abs(a),Math.abs(b),1);
+  const diff = Math.abs(a-b)/denom;
+  const factor = 1.6;
+  return Math.max(0, 1 - diff*factor);
+}
+function compute_rhythm_similarity(feats, template){
+  if(!feats || !template) return null;
+  const params = [
+    ['mean_hold',0.22], ['std_hold',0.12],
+    ['mean_dd',0.22], ['std_dd',0.08],
+    ['pauses_over_200',0.10], ['cpm',0.12],
+    ['backspace_rate',0.04], ['paste_count',0.04], ['blur_count',0.02]
+  ];
+  let score=0, total=0;
+  for(const [p,w] of params){
+    const sim = paramSimilarity(feats[p], template[p]);
+    score += sim*w; total += w;
+  }
+  return Math.round((score/total)*100);
+}
+
+/* ---------- TEMPLATE persistence helpers (server + fallback) ---------- */
+async function saveTemplateToServer(userId, template){
+  try{
+    const r = await fetch(BACKEND + '/api/save_template', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ user_id: userId, template })
+    });
+    if(!r.ok) throw new Error('server save failed');
+    return await r.json();
+  }catch(e){
+    safeLog('Server save failed, falling back to localStorage');
+    const key = 'ke_templates_'+userId;
+    const arr = JSON.parse(localStorage.getItem(key) || '[]');
+    arr.push(template);
+    localStorage.setItem(key, JSON.stringify(arr));
+    return {ok:true};
+  }
+}
+async function listTemplatesFromServer(userId){
+  try{
+    const r = await fetch(BACKEND + '/api/templates?user_id=' + encodeURIComponent(userId));
+    if(!r.ok) throw new Error('server list failed');
+    return await r.json();
+  }catch(e){
+    safeLog('Server list failed, using local templates');
+    const key = 'ke_templates_'+userId;
+    return JSON.parse(localStorage.getItem(key) || '[]');
+  }
+}
+
+/* ---------- UI wiring ---------- */
+const answerBox = document.getElementById('answerBox');
+const eventsCountEl = document.getElementById('eventsCount');
+const liveScoreText = document.getElementById('liveScoreText');
+const liveDot = document.getElementById('liveStatusDot');
+const templateList = document.getElementById('templateList');
+const compareResult = document.getElementById('compareResult');
+
+let keystrokeEvents = [];
+window._pasteCount = 0;
+window._blurCount = 0;
+let activeTemplate = null;
+
+function setLiveColor(color){
+  liveDot.className = 'status-dot ' + (color==='green'
+    ? 'status-green'
+    : color==='yellow'
+      ? 'status-yellow'
+      : 'status-red');
+}
+
+/* capture keystrokes (with caret info) */
+answerBox.addEventListener('keydown', ev=>{
+  const el = answerBox;
+  keystrokeEvents.push({
+    type:'keydown',
+    key:ev.key,
+    ts:Date.now(),
+    pos: el.selectionStart ?? null,
+    selLen: el.selectionEnd!=null && el.selectionStart!=null ? (el.selectionEnd - el.selectionStart) : null
+  });
+  eventsCountEl.innerText = keystrokeEvents.length;
+});
+answerBox.addEventListener('keyup', ev=>{
+  const el = answerBox;
+  keystrokeEvents.push({
+    type:'keyup',
+    key:ev.key,
+    ts:Date.now(),
+    pos: el.selectionStart ?? null,
+    selLen: el.selectionEnd!=null && el.selectionStart!=null ? (el.selectionEnd - el.selectionStart) : null
+  });
+  eventsCountEl.innerText = keystrokeEvents.length;
+});
+
+/* paste/blur/focus handlers -> warn AND send events (for malpractice detection) */
+answerBox.addEventListener('paste', ev=>{
+  const pasteText = (ev.clipboardData || window.clipboardData)?.getData('text') || '';
+  window._pasteCount = (window._pasteCount||0) + 1;
+  keystrokeEvents.push({
+    type:'paste',
+    key:null,
+    ts:Date.now(),
+    clipboardLength: pasteText.length
+  });
+  const w = document.getElementById('warnings');
+  w.innerHTML = `<div class="alert alert-warning py-1">Paste detected — this may be flagged as malpractice</div>` + w.innerHTML;
+  safeLog('Paste detected ('+pasteText.length+' chars)');
+});
+
+window.addEventListener('blur', ()=>{
+  window._blurCount = (window._blurCount||0) + 1;
+  keystrokeEvents.push({type:'blur', key:null, ts:Date.now()});
+  const w = document.getElementById('warnings');
+  w.innerHTML = `<div class="alert alert-warning py-1">Window lost focus — possible tab/app switching</div>` + w.innerHTML;
+  safeLog('Window blur detected');
+});
+
+window.addEventListener('focus', ()=>{
+  keystrokeEvents.push({type:'focus', key:null, ts:Date.now()});
+});
+
+/* new / existing user buttons */
+document.getElementById('newUserBtn').addEventListener('click', async ()=>{
+  try{
+    const r = await fetch(BACKEND + '/api/create_user', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({})
+    });
+    if(r.ok){
+      const data = await r.json();
+      setActiveUserId(data.user_id);
+      safeLog('Created user '+data.user_id);
+      await refreshTemplatesUI();
+      return;
+    }
+  }catch(e){
+    safeLog('create_user failed: '+e);
+  }
+  const uid = 'local-'+Math.random().toString(36).slice(2,10);
+  setActiveUserId(uid);
+  safeLog('Created local user '+uid);
+  await refreshTemplatesUI();
+});
+document.getElementById('useExistingBtn').addEventListener('click', async ()=>{
+  const v = document.getElementById('existingUserInput').value.trim();
+  if(!v) return alert('Paste a user id');
+  setActiveUserId(v);
+  safeLog('Using user '+v);
+  await refreshTemplatesUI();
+});
+
+/* refresh template list */
+async function refreshTemplatesUI(){
+  const uid = localStorage.getItem('ke_user_id');
+  templateList.innerHTML = '';
+  if(!uid) return;
+  const arr = await listTemplatesFromServer(uid);
+  if(!arr || !arr.length){
+    templateList.innerHTML = '<option value="">(no templates)</option>';
+    return;
+  }
+  arr.forEach((t,i)=>{
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `Template ${i+1} — samples:${t._num_samples||1}`;
+    opt._template = t;
+    templateList.appendChild(opt);
+  });
+}
+
+/* save current as template (front-end features) */
+document.getElementById('saveTemplateBtn').addEventListener('click', async ()=>{
+  const uid = localStorage.getItem('ke_user_id');
+  if(!uid) return alert('Set or create a user first');
+  if(keystrokeEvents.length < 10) return alert('Type something to create a template (at least a few events).');
+  const feats = extract_features(keystrokeEvents);
+  feats._raw = keystrokeEvents.slice();
+  feats._num_samples = 1;
+  feats._text_example = document.getElementById('answerBox').value || '';
+  await saveTemplateToServer(uid, feats);
+  safeLog('Template saved for user '+uid);
+  await refreshTemplatesUI();
+});
+
+/* pick template */
+templateList.addEventListener('change', (ev)=>{
+  const opt = templateList.selectedOptions[0];
+  if(!opt){
+    activeTemplate = null;
+    return;
+  }
+  activeTemplate = opt._template || null;
+  safeLog('Selected template index ' + opt.value);
+  compareResult.innerText = 'Selected template — ready to compare';
+});
+
+/* compute live similarity (small window) */
+function maybeUpdateLiveScore(){
+  if(!activeTemplate){
+    liveScoreText.innerText = 'No template';
+    setLiveColor('yellow');
+    return;
+  }
+  const slice = keystrokeEvents.slice(-200);
+  const feats = extract_features(slice);
+  const sim = compute_rhythm_similarity(feats, activeTemplate);
+  if(sim==null){
+    liveScoreText.innerText = 'No template';
+    setLiveColor('yellow');
+    return;
+  }
+  liveScoreText.innerText = sim + '%';
+  if(sim>80) setLiveColor('green');
+  else if(sim>55) setLiveColor('yellow');
+  else setLiveColor('red');
+}
+setInterval(maybeUpdateLiveScore, 700);
+
+/* submit: compute features, compare locally, AND send to backend /api/submit_events */
+document.getElementById('submitBtn').addEventListener('click', async ()=>{
+  const text = document.getElementById('answerBox').value || '';
+  if(text.length < MIN_CHARS_TO_COMPARE)
+    return alert('Please type at least ' + MIN_CHARS_TO_COMPARE + ' characters.');
+  const feats = extract_features(keystrokeEvents);
+
+  let textSim = null;
+  if(activeTemplate && activeTemplate._text_example)
+    textSim = textSimilarity(text, activeTemplate._text_example);
+
+  let rhythmSim = null;
+  if(activeTemplate)
+    rhythmSim = compute_rhythm_similarity(feats, activeTemplate);
+  else {
+    const uid = localStorage.getItem('ke_user_id');
+    if(uid){
+      const arr = await listTemplatesFromServer(uid);
+      let best = {sim:-1, idx:-1, tpl:null};
+      for(let i=0;i<arr.length;i++){
+        const s = compute_rhythm_similarity(feats, arr[i]);
+        if(s!=null && s>best.sim){ best = {sim:s, idx:i, tpl:arr[i]}; }
+      }
+      if(best.sim>=0){
+        rhythmSim = best.sim;
+        activeTemplate = best.tpl;
+        safeLog('Matched best template idx='+best.idx+' sim='+best.sim);
+      }
+    }
+  }
+
+  let verdict = 'No template to compare';
+  if(rhythmSim!=null){
+    if(textSim!=null && textSim >= TEXT_SIMILARITY_THRESHOLD && rhythmSim < RHYTHM_SIMILARITY_THRESHOLD){
+      verdict = `POSSIBLE COPY — text ≈ (${Math.round(textSim*100)}%) but rhythm low (${rhythmSim}%)`;
+    } else if(rhythmSim >= RHYTHM_SIMILARITY_THRESHOLD){
+      verdict = `Genuine match — rhythm ${rhythmSim}%`;
+    } else {
+      verdict = `Suspicious — rhythm ${rhythmSim}%`;
+    }
+  } else {
+    verdict = 'No template available for rhythm comparison';
+  }
+
+  compareResult.innerText = verdict + (textSim!=null? ` | textSim ${Math.round((textSim||0)*100)}%` : '');
+  safeLog('Submit evaluated (front-end): ' + verdict);
+
+  const uid = localStorage.getItem('ke_user_id');
+  if(uid){
+    try{
+      const payload = {
+        user_id: uid,
+        question_id: "demo_1",
+        events: keystrokeEvents,
+        device_info: navigator.userAgent || "",
+        enrollment: false,          // treat this as test; we're just logging
+        final_text: text,
+        test_id: "demo_" + Date.now(),
+        phase: "test"
+      };
+      const r = await fetch(BACKEND + '/api/submit_events', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      if(r.ok){
+        const data = await r.json();
+        safeLog(`Backend stored sample: score=${data.score} verdict=${data.verdict}`);
+      }else{
+        safeLog('submit_events HTTP error '+r.status);
+      }
+    }catch(e){
+      safeLog('Error calling /api/submit_events: '+e);
+    }
+  }
+
+  // reset events for next sentence
+  keystrokeEvents = [];
+  document.getElementById('eventsCount').innerText = 0;
+});
+
+/* clear */
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  keystrokeEvents = [];
+  answerBox.value = '';
+  document.getElementById('eventsCount').innerText = 0;
+  safeLog('Cleared editor/events');
+});
+
+/* refresh button */
+document.getElementById('refreshTemplatesBtn').addEventListener('click', ()=> refreshTemplatesUI());
+
+/* on load, restore user */
+(function init(){
+  const uid = localStorage.getItem('ke_user_id');
+  if(uid) setActiveUserId(uid);
+  refreshTemplatesUI();
+  safeLog('UI ready');
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+"""
+with open('/mnt/data/keystroke_demo.html','w',encoding='utf8') as f:
+    f.write(html)
+print("WROTE /mnt/data/keystroke_demo.html")
+

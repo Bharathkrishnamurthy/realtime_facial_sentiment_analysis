@@ -1,0 +1,102 @@
+﻿# app/candidate_routes.py
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import List, Optional
+import app.database as database
+import app.session_service as session_service
+from app.models import Event
+import logging
+
+logger = logging.getLogger("keystroke_candidate")
+router = APIRouter(prefix="/candidate", tags=["candidate"])
+
+
+class StartRequest(BaseModel):
+    token: str
+
+
+class SubmitAnswerRequest(BaseModel):
+    session_id: str
+    question_id: int
+    final_text: Optional[str] = ""
+    events: List[Event] = []
+
+
+class FinishRequest(BaseModel):
+    session_id: str
+
+
+@router.post("/start")
+def start_test(req: StartRequest):
+    db = database.get_conn()
+    try:
+        session_id, test_id = session_service.create_session_for_token(db, req.token)
+        if not session_id:
+            raise HTTPException(status_code=404, detail="Invalid Token")
+        questions = session_service.get_questions_for_test(db, test_id)
+        return {"status": "ok", "session_id": session_id, "test_id": test_id, "questions": questions}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("start_test failed")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            db.close()
+        except:
+            pass
+
+
+@router.post("/submit_answer")
+def submit_answer(req: SubmitAnswerRequest):
+    db = database.get_conn()
+    try:
+        s = db.execute("SELECT * FROM sessions WHERE session_id = ? LIMIT 1", (req.session_id,)).fetchone()
+        if not s:
+            raise HTTPException(status_code=404, detail="session not found")
+        # mark started if needed
+        try:
+            db.execute(
+                "UPDATE sessions SET started_at = COALESCE(started_at, datetime('now')), status = COALESCE(status, 'active') WHERE session_id = ?",
+                (req.session_id,),
+            )
+            db.commit()
+        except Exception:
+            pass
+
+        # Save answer and biometrics
+        session_service.save_answer_and_biometrics(
+            db, req.session_id, req.question_id, req.final_text or "", [e.dict() for e in req.events] if req.events else []
+        )
+        return {"status": "ok", "note": "features extracted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("submit_answer failed")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            db.close()
+        except:
+            pass
+
+
+@router.post("/finish")
+def finish_test(req: FinishRequest):
+    db = database.get_conn()
+    try:
+        s = db.execute("SELECT * FROM sessions WHERE session_id = ? LIMIT 1", (req.session_id,)).fetchone()
+        if not s:
+            raise HTTPException(status_code=404, detail="session not found")
+        score, authenticity = session_service.finish_session(db, req.session_id)
+        return {"status": "ok", "session_id": req.session_id, "score": score, "authenticity": authenticity}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("finish_test failed")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            db.close()
+        except:
+            pass

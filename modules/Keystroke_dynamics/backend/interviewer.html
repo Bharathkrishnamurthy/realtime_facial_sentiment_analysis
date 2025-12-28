@@ -1,0 +1,13 @@
+<!doctype html><html><body>
+<h3>Interviewer summary</h3>
+<button onclick="load()">Refresh</button>
+<pre id="out" style="white-space:pre-wrap"></pre>
+<script>
+async function load(){
+  const r = await fetch('/interviewer/summary');
+  const j = await r.json();
+  document.getElementById('out').innerText = JSON.stringify(j, null, 2);
+}
+load();
+</script>
+</body></html>

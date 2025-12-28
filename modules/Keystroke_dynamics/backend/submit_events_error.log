@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\main.py", line 50, in submit_events
+    final_text = req.final_text or ""
+                 ^^^^^^^^^^^^^^
+  File "C:\Users\Dell\Desktop\Keystroke_dynamics\.venv\Lib\site-packages\pydantic\main.py", line 1026, in __getattr__
+    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+AttributeError: 'SubmitEventsRequest' object has no attribute 'final_text'

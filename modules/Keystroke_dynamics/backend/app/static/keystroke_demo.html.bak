@@ -1,0 +1,480 @@
+<!--
+Local file path (uploaded by user): /mnt/data/keystroke_samples/enroll_sample_1.json
+(Your environment will transform this into the correct URL when serving files.)
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Keystroke Demo — Polished (with Dataset Loader)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background:#f7f9fc; }
+    .editor { font-family: Menlo, Monaco, Consolas, monospace; font-size:14px; line-height:1.5; }
+    .panel { background: white; border-radius:8px; padding:14px; box-shadow:0 6px 18px rgba(20,30,60,0.06); }
+    .status-dot { width:12px; height:12px; border-radius:50%; display:inline-block; margin-right:8px; }
+    .status-green { background:#28a745; } .status-yellow { background:#ffc107; } .status-red { background:#dc3545; }
+    .log { height:200px; overflow:auto; background:#0b1220; color:#cfe8ff; padding:8px; border-radius:6px; font-family:monospace; font-size:12px; }
+    .small { font-size:0.9rem; }
+    .btn-ghost { background:transparent; border:1px solid #dde6f2; }
+    code { background: #f1f5f9; padding:4px 6px; border-radius:4px; }
+    .ds-panel { margin-top:12px; padding:10px; border-radius:8px; background:#ffffff; }
+  </style>
+</head>
+<body>
+<div class="container py-4">
+  <div class="row mb-3 align-items-center">
+    <div class="col-8">
+      <h1 class="h3 m-0">Keystroke Test — Demo UI</h1>
+      <div class="small text-muted">HackerRank-like layout for demoing typing rhythm / keystroke biometrics</div>
+    </div>
+    <div class="col-4 text-end small">
+      <span id="serverStatus" class="me-2">Backend: <strong id="backendHost">http://127.0.0.1:9000</strong></span>
+      <button id="openSwagger" class="btn btn-sm btn-outline-primary">Open API Docs</button>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- LEFT: question + controls -->
+    <div class="col-lg-3">
+      <div class="panel">
+        <div class="mb-2"><strong>Question</strong></div>
+        <div id="questionText" style="min-height:120px; white-space:pre-wrap;">Loading demo question...</div>
+        <hr />
+        <div class="mb-2 small">Controls</div>
+        <div class="mb-2">
+          <input id="tokenInput" class="form-control form-control-sm mb-2" placeholder="assignment token" value="fe5cf222-b59a-41ca-b30a-f7b7e32b3de2">
+          <div class="d-grid gap-2">
+            <div class="btn-group">
+              <button id="startBtn" class="btn btn-primary btn-sm">Start Test</button>
+              <button id="enrollBtn" class="btn btn-secondary btn-sm">Enroll Sample</button>
+              <button id="nextBtn" class="btn btn-outline-secondary btn-sm">Next Q</button>
+            </div>
+            <div class="mt-2 d-flex gap-2">
+              <button id="resetEnroll" class="btn btn-ghost btn-sm">Reset Enrollment</button>
+              <button id="enrollFinishBtn" class="btn btn-info btn-sm">Finalize Enrollment</button>
+            </div>
+          </div>
+        </div>
+        <hr />
+        <div class="small text-muted">Enrollment samples collected:</div>
+        <div id="enrollCount">0</div>
+
+        <!-- DATASET LOADER UI -->
+        <div class="ds-panel">
+          <label class="small"><strong>Dataset loader</strong></label>
+          <input id="dsFile" type="file" accept=".json" class="form-control form-control-sm mt-2" />
+          <small id="dsInfo" class="text-muted">No dataset loaded</small>
+
+          <div id="sampleControls" style="display:none;margin-top:8px">
+            <select id="sampleIndex" class="form-select form-select-sm mt-2"></select>
+            <div class="d-flex gap-2 mt-2">
+              <button id="previewMeta" class="btn btn-sm btn-outline-primary">Preview Meta</button>
+              <button id="replaySample" class="btn btn-sm btn-outline-secondary">Replay Sample</button>
+              <button id="autoEnroll" class="btn btn-sm btn-outline-success">Replay & Enroll</button>
+            </div>
+            <pre id="metaOutput" style="white-space:pre-wrap;background:#f7f7fb;padding:8px;border-radius:6px;margin-top:8px;font-size:13px;"></pre>
+          </div>
+        </div>
+        <!-- END DATASET LOADER -->
+      </div>
+    </div>
+
+    <!-- CENTER: editor -->
+    <div class="col-lg-6">
+      <div class="panel">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div><strong>Editor / Answer</strong></div>
+          <div class="small text-muted">Type here — events are captured live</div>
+        </div>
+        <textarea id="answerBox" class="form-control editor" rows="12" placeholder="Type answer here..."></textarea>
+        <div class="d-flex gap-2 mt-3">
+          <button id="submitBtn" class="btn btn-success">Submit answer</button>
+          <button id="finishBtn" class="btn btn-outline-danger">Finish session</button>
+          <div class="ms-auto small text-muted align-self-center">Events recorded: <span id="eventsCount">0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: live status / logs -->
+    <div class="col-lg-3">
+      <div class="panel mb-3">
+        <div class="d-flex align-items-center mb-2">
+          <div id="liveStatusDot" class="status-dot status-yellow"></div>
+          <div>
+            <div><strong>Live similarity</strong></div>
+            <div class="small text-muted" id="liveScoreText">No session</div>
+          </div>
+        </div>
+        <div class="mb-2 small">Session</div>
+        <div><code id="sessionId">—</code></div>
+        <hr />
+        <div class="small text-muted mb-1">Logs</div>
+        <div id="logArea" class="log"></div>
+      </div>
+
+      <div class="panel">
+        <div class="small text-muted mb-1">Summary</div>
+        <ul class="list-unstyled small" id="summaryList">
+          <li>Score: <span id="lastScore">—</span></li>
+          <li>Authenticity: <span id="lastAuth">—</span></li>
+          <li>Paste incidents: <span id="pasteCount">0</span></li>
+          <li>Tab switches: <span id="blurCount">0</span></li>
+          <hr />
+          <li>mean_dwell: <span id="meta_mean_dwell">—</span></li>
+          <li>mean_flight: <span id="meta_mean_flight">—</span></li>
+          <li>cpm: <span id="meta_cpm">—</span></li>
+          <li>pauses_over_200: <span id="meta_pauses">—</span></li>
+          <li>duration_ms: <span id="meta_duration">—</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-3">
+    <div class="col-12 small text-muted">Notes: This is a demo front-end. You should point <code>BACKEND</code> at your running FastAPI server. Enrollment here calls server endpoints if available; otherwise a local template is used for demo live-similarity.</div>
+  </div>
+</div>
+
+<script>
+/* ---------------- CONFIG ---------------- */
+const BACKEND = "http://127.0.0.1:9000"; // change if needed
+let QUESTIONS = [
+  {id:1, text: 'Please write a short paragraph (2-4 lines) introducing yourself. Use normal punctuation.'},
+  {id:2, text: 'Type this sentence exactly: The quick brown fox jumps over the lazy dog.'}
+];
+/* -------------- END CONFIG --------------- */
+
+let currentQuestionIndex = 0;
+let sessionId = null;
+let keystrokeEvents = []; // {type, key, ts}
+let enrollSamples = []; // array of events arrays (local demo)
+let pasteCount = 0, blurCount = 0;
+
+const answerBox = document.getElementById('answerBox');
+const logArea = document.getElementById('logArea');
+const eventsCount = document.getElementById('eventsCount');
+const sessionIdEl = document.getElementById('sessionId');
+const liveScoreText = document.getElementById('liveScoreText');
+const liveStatusDot = document.getElementById('liveStatusDot');
+const enrollCountEl = document.getElementById('enrollCount');
+const lastScore = document.getElementById('lastScore');
+const lastAuth = document.getElementById('lastAuth');
+const pasteCountEl = document.getElementById('pasteCount');
+const blurCountEl = document.getElementById('blurCount');
+const questionText = document.getElementById('questionText');
+
+function log(msg) { const t = new Date().toISOString().substr(11,8); logArea.innerText = `[${t}] ${msg}\n` + logArea.innerText; }
+function setLiveColor(color) { liveStatusDot.className = 'status-dot ' + (color==='green' ? 'status-green' : color==='yellow' ? 'status-yellow' : 'status-red'); }
+
+function renderQuestion() { const q = QUESTIONS[currentQuestionIndex]; questionText.innerText = q ? q.text : 'No question loaded'; }
+renderQuestion();
+
+// KEYSTROKE CAPTURE
+answerBox.addEventListener('keydown', (ev)=>{
+  keystrokeEvents.push({type:'keydown', key:ev.key, ts:Date.now()});
+  eventsCount.innerText = keystrokeEvents.length;
+  maybeUpdateLiveScore();
+});
+answerBox.addEventListener('keyup', (ev)=>{
+  keystrokeEvents.push({type:'keyup', key:ev.key, ts:Date.now()});
+  eventsCount.innerText = keystrokeEvents.length;
+  maybeUpdateLiveScore();
+});
+
+// paste detection
+answerBox.addEventListener('paste', (ev)=>{
+  pasteCount += 1; pasteCountEl.innerText = pasteCount;
+  log('Paste detected — mark incident');
+});
+
+// blur detection (tab switch)
+window.addEventListener('blur', ()=>{ blurCount += 1; blurCountEl.innerText = blurCount; log('Window lost focus (possible alt-tab)'); });
+
+// features & template functions
+function extract_features(events) {
+  const holds = [];
+  const lastDown = {};
+  for (const e of events) {
+    if (e.type==='keydown') lastDown[e.key] = e.ts;
+    else if (e.type==='keyup' && lastDown[e.key]) { holds.push(e.ts - lastDown[e.key]); delete lastDown[e.key]; }
+  }
+  const dd = [];
+  let prevDown = null;
+  for (const e of events) { if (e.type==='keydown') { if (prevDown) dd.push(e.ts - prevDown); prevDown = e.ts; }}
+  const mean = arr => arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  return { mean_hold: mean(holds), mean_dd: mean(dd), num_events: events.length };
+}
+
+function similarity_to_template(features, template) {
+  if (!template) return null;
+  const d1 = template.mean_hold && features.mean_hold ? Math.abs(features.mean_hold - template.mean_hold)/template.mean_hold : 1;
+  const d2 = template.mean_dd && features.mean_dd ? Math.abs(features.mean_dd - template.mean_dd)/template.mean_dd : 1;
+  const score = Math.max(0, 1 - (0.6*d1 + 0.4*d2));
+  return Math.round(score*100);
+}
+
+function compute_template_from_samples(samples) {
+  if (!samples.length) return null;
+  const feats = samples.map(s=>extract_features(s));
+  const avg = f => { const arr = feats.map(x=>x[f]).filter(x=>x!=null); return arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : null };
+  return { mean_hold: avg('mean_hold'), mean_dd: avg('mean_dd') };
+}
+
+let localTemplate = JSON.parse(localStorage.getItem('ke_demo_template') || 'null');
+if (localTemplate) { enrollSamples = localTemplate._rawSamples || []; enrollCountEl.innerText = enrollSamples.length; }
+
+function maybeUpdateLiveScore() {
+  const slice = keystrokeEvents.slice(-200);
+  const feats = extract_features(slice);
+  const tpl = localTemplate || (enrollSamples.length? compute_template_from_samples(enrollSamples) : null);
+  const sim = similarity_to_template(feats, tpl);
+  if (sim==null) { liveScoreText.innerText = 'No template'; setLiveColor('yellow'); return; }
+  liveScoreText.innerText = sim + '% similarity';
+  if (sim>80) setLiveColor('green'); else if (sim>50) setLiveColor('yellow'); else setLiveColor('red');
+}
+
+/* ---------------- UI ACTIONS ---------------- */
+
+// Start test (create server session + load questions if server returns)
+document.getElementById('startBtn').addEventListener('click', async ()=>{
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!token) { alert('Please enter the assignment token'); return; }
+  try {
+    const r = await fetch(BACKEND + '/candidate/start', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({token}) });
+    if (!r.ok) { const t = await r.text(); alert('Start failed: ' + t); return; }
+    const data = await r.json();
+    if (!data || !data.session_id) { alert('Start response did not include session id.'); return; }
+    sessionId = data.session_id;
+    sessionIdEl.innerText = sessionId;
+    log('Session created ' + sessionId);
+    if (data.questions && data.questions.length) {
+      QUESTIONS = [];
+      data.questions.forEach(q => QUESTIONS.push({ id: q.question_id || q.id, text: q.text, seq: q.seq || 0 }) );
+      currentQuestionIndex = 0;
+      renderQuestion();
+    }
+  } catch (e) { alert('Network error: ' + (e && e.message)); console.error(e); }
+});
+
+// Next question (rotate)
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  if (!QUESTIONS.length) { alert('No questions loaded'); return; }
+  currentQuestionIndex = (currentQuestionIndex + 1) % QUESTIONS.length;
+  renderQuestion();
+  answerBox.value = '';
+  keystrokeEvents = [];
+  eventsCount.innerText = 0;
+  log('Switched to next question (index ' + currentQuestionIndex + ')');
+});
+
+// Enroll sample (server-side enroll if endpoint available)
+document.getElementById('enrollBtn').addEventListener('click', async ()=>{
+  if (!keystrokeEvents.length) { alert('Type some text first so we can record an enrollment sample'); return; }
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!token) { alert('Please enter the assignment token'); return; }
+
+  // Try server enroll endpoint first; if 404/failure, fallback to local sample store
+  try {
+    const payload = { token, events: keystrokeEvents.slice() };
+    const r = await fetch(BACKEND + '/candidate/enroll', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (r.ok) {
+      const body = await r.json();
+      enrollCountEl.innerText = body.samples_count ?? enrollSamples.length;
+      log('Enrollment sample saved to server. samples=' + (body.samples_count||'?'));
+      return;
+    } else {
+      log('Server enroll failed or not available; using local enrollment fallback.');
+    }
+  } catch (e) {
+    log('Server enroll failed (network). Using local enrollment fallback.');
+  }
+
+  // local fallback behavior
+  enrollSamples.push(keystrokeEvents.slice());
+  enrollCountEl.innerText = enrollSamples.length;
+  localTemplate = compute_template_from_samples(enrollSamples);
+  localStorage.setItem('ke_demo_template', JSON.stringify(Object.assign({_rawSamples: enrollSamples}, localTemplate)));
+  log('Enrollment sample saved locally — samples=' + enrollSamples.length);
+});
+
+// Reset enrollment
+document.getElementById('resetEnroll').addEventListener('click', ()=>{
+  if (!confirm('Reset enrollment samples?')) return;
+  enrollSamples = []; localTemplate = null; localStorage.removeItem('ke_demo_template'); enrollCountEl.innerText = 0; log('Enrollment reset');
+});
+
+// Finalize enrollment (ask server to compute template)
+document.getElementById('enrollFinishBtn').addEventListener('click', async ()=>{
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!token) { alert('Please enter token'); return; }
+  try {
+    const r = await fetch(BACKEND + '/candidate/enroll_finish', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token })});
+    if (!r.ok) { const b = await r.text(); alert('Finalize failed: ' + b); return; }
+    const body = await r.json();
+    log('Server computed template: ' + JSON.stringify(body.template));
+    localTemplate = body.template;
+    localStorage.setItem('ke_demo_template', JSON.stringify(Object.assign({_rawSamples: enrollSamples}, localTemplate)));
+  } catch (e) { alert('Network error: ' + e.message); }
+});
+
+// Submit answer
+const ENABLE_COVERAGE_CHECK = true;
+const QUESTION_COVERAGE = { 1: ['lowercase','spaces','punctuation'], 2: ['lowercase','uppercase','digits','punctuation','spaces'] };
+function checkCoverageForText(requiredClasses, text) {
+  const has = {
+    lowercase: /[a-z]/.test(text),
+    uppercase: /[A-Z]/.test(text),
+    digits: /\d/.test(text),
+    punctuation: /[!@#\$%\^&\*\(\)\-_=+\[\]\{\};:'",.<>\/\\?\|`~]/.test(text),
+    spaces: /\s/.test(text)
+  };
+  const missing = (requiredClasses||[]).filter(cls => !has[cls]);
+  return { ok: missing.length===0, missing };
+}
+
+document.getElementById('submitBtn').addEventListener('click', async ()=>{
+  if (!sessionId) { alert('No session — press Start first'); return; }
+  const q = QUESTIONS[currentQuestionIndex];
+  if (!q) { alert('No question selected'); return; }
+
+  const finalText = answerBox.value || '';
+  if (ENABLE_COVERAGE_CHECK) {
+    const required = QUESTION_COVERAGE[q.id] || ['lowercase','spaces'];
+    const res = checkCoverageForText(required, finalText);
+    if (!res.ok) { alert('Your answer does not include required character types: ' + res.missing.join(', ')); log('Coverage check failed: missing ' + res.missing.join(', ')); return; }
+  }
+
+  const payload = { session_id: sessionId, question_id: q.id, final_text: finalText, events: keystrokeEvents };
+  try {
+    const r = await fetch(BACKEND + '/candidate/submit_answer', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const body = await r.json();
+    if (!r.ok) { alert('Submit failed: ' + JSON.stringify(body)); log('Submit failed: ' + JSON.stringify(body)); return; }
+
+    log('Submit OK — features extracted; server response: ' + JSON.stringify(body));
+    lastScore.innerText = (body.score !== undefined) ? body.score : lastScore.innerText;
+    lastAuth.innerText = (body.authenticity || body.verdict || lastAuth.innerText);
+
+    answerBox.value = '';
+    keystrokeEvents = [];
+    eventsCount.innerText = 0;
+
+    if (currentQuestionIndex < QUESTIONS.length - 1) {
+      currentQuestionIndex += 1;
+      renderQuestion();
+      log('Auto-advanced to question index ' + currentQuestionIndex + ' (id=' + QUESTIONS[currentQuestionIndex].id + ')');
+    } else {
+      log('All questions completed. You may call /candidate/finish now or auto-finish.');
+    }
+  } catch (e) { alert('Network error: ' + e.message); }
+});
+
+// Finish session
+document.getElementById('finishBtn').addEventListener('click', async ()=>{
+  if (!sessionId) { alert('No session — press Start first'); return; }
+  try {
+    const r = await fetch(BACKEND + '/candidate/finish', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ session_id: sessionId }) });
+    const body = await r.json();
+    if (!r.ok) { alert('Finish failed: ' + JSON.stringify(body)); log('Finish failed: ' + JSON.stringify(body)); return; }
+    log('Finished session — score=' + (body.score ?? body.status ?? '—'));
+    alert('Test finished. Score: ' + (body.score ?? body.status ?? '—'));
+    sessionId = null; sessionIdEl.innerText = '—';
+  } catch (e) { alert('Network error: ' + e.message); }
+});
+
+// Open swagger/docs
+document.getElementById('openSwagger').addEventListener('click', ()=>{ window.open(BACKEND + '/docs', '_blank'); });
+
+// expose for debugging
+window.__ke_demo = { getTemplate: ()=>localTemplate, enrollSamples };
+
+// DATASET UI logic
+const dsFile = document.getElementById('dsFile');
+const dsInfo = document.getElementById('dsInfo');
+const sampleControls = document.getElementById('sampleControls');
+const sampleIndex = document.getElementById('sampleIndex');
+const metaOutput = document.getElementById('metaOutput');
+let dataset = [];
+
+dsFile.addEventListener('change', async (ev)=>{
+  const f = ev.target.files[0];
+  if (!f) return;
+  dsInfo.textContent = `Loading ${f.name} ...`;
+  const txt = await f.text();
+  try {
+    dataset = JSON.parse(txt);
+    dsInfo.textContent = `Loaded ${dataset.length} samples from ${f.name}`;
+    populateSampleList();
+    sampleControls.style.display = 'block';
+  } catch(e) {
+    dsInfo.textContent = 'Error parsing JSON: ' + e.message;
+    sampleControls.style.display = 'none';
+  }
+});
+
+function populateSampleList(){
+  sampleIndex.innerHTML = '';
+  dataset.forEach((s,i)=>{
+    const opt = document.createElement('option'); opt.value = i; opt.textContent = `${i} — ${s.phrase?.slice(0,40) || s.id}`; sampleIndex.appendChild(opt);
+  });
+}
+
+function showMeta(i){
+  const s = dataset[i]; if(!s) return metaOutput.textContent = 'sample not found';
+  const m = s.meta || {};
+  metaOutput.textContent = `id: ${s.id}\nphrase: ${s.phrase}\npaste_flag: ${s.paste_flag}\n\nmean_dwell: ${m.mean_dwell}\nmean_flight: ${m.mean_flight}\ncpm: ${m.cpm}\npauses_over_200: ${m.pauses_over_200}\nduration_ms: ${m.duration_ms}\nnum_key_events: ${m.num_key_events}`;
+  // also update right-summary fields so UI matches dataset
+  document.getElementById('meta_mean_dwell').innerText = m.mean_dwell ?? '—';
+  document.getElementById('meta_mean_flight').innerText = m.mean_flight ?? '—';
+  document.getElementById('meta_cpm').innerText = m.cpm ?? '—';
+  document.getElementById('meta_pauses').innerText = m.pauses_over_200 ?? '—';
+  document.getElementById('meta_duration').innerText = m.duration_ms ?? '—';
+}
+
+document.getElementById('previewMeta').addEventListener('click', ()=> showMeta(Number(sampleIndex.value)));
+
+async function replayEvents(events){
+  const el = answerBox; if(!el) { alert('Textarea not found on this page'); return; }
+  el.focus(); events = events.slice().sort((a,b)=>(a.ts||0)-(b.ts||0));
+  const startTs = events[0]?.ts || 0; const offset = Date.now() - startTs;
+  for (const ev of events){
+    const when = (ev.ts||0) + offset; const wait = when - Date.now(); if (wait>0) await new Promise(r=>setTimeout(r, wait));
+    const type = (ev.type && ev.type.toLowerCase().includes('down')) ? 'keydown' : (ev.type && ev.type.toLowerCase().includes('up')) ? 'keyup' : ev.type;
+    if (type === 'paste') {
+      const pasteText = ev.clipboardText || ev.clipboardLength ? ev.clipboardText || '' : '';
+      if (el.value !== undefined) el.value = pasteText; else el.textContent = pasteText; el.dispatchEvent(new Event('input',{bubbles:true})); continue;
+    }
+    const key = ev.key || ev.k || ev.code || ' ';
+    const kevt = new KeyboardEvent(type, {key: key, bubbles:true, cancelable:true}); el.dispatchEvent(kevt);
+    if (type === 'keydown' && key.length === 1) { el.value = (el.value||'') + key; el.dispatchEvent(new Event('input',{bubbles:true})); }
+    // also push into local keystrokeEvents so UI can compute live features
+    keystrokeEvents.push({type: type, key: key, ts: Date.now()}); eventsCount.innerText = keystrokeEvents.length;
+  }
+}
+
+document.getElementById('replaySample').addEventListener('click', async ()=>{
+  const idx = Number(sampleIndex.value); const s = dataset[idx]; if(!s) return alert('no sample');
+  keystrokeEvents = []; eventsCount.innerText = 0; await replayEvents(s.events); alert('Replay finished — now click Enroll Sample or Submit');
+});
+
+// Replay & auto-enroll: replay and then call local enroll fallback or server enroll
+document.getElementById('autoEnroll').addEventListener('click', async ()=>{
+  const idx = Number(sampleIndex.value); const s = dataset[idx]; if(!s) return alert('no sample');
+  keystrokeEvents = []; eventsCount.innerText = 0; await replayEvents(s.events);
+  // try server enroll, otherwise local fallback (same logic as enrollBtn)
+  const token = document.getElementById('tokenInput').value.trim();
+  try {
+    const payload = { token, events: keystrokeEvents.slice() };
+    const r = await fetch(BACKEND + '/candidate/enroll', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    if (r.ok) { const body = await r.json(); enrollCountEl.innerText = body.samples_count ?? enrollSamples.length; log('Enrollment saved to server'); return; }
+  } catch(e) { /* fallthrough */ }
+  enrollSamples.push(keystrokeEvents.slice()); enrollCountEl.innerText = enrollSamples.length; localTemplate = compute_template_from_samples(enrollSamples); localStorage.setItem('ke_demo_template', JSON.stringify(Object.assign({_rawSamples: enrollSamples}, localTemplate))); log('Enrollment saved locally (autoEnroll)');
+});
+
+// initial UI
+pasteCountEl.innerText = pasteCount; blurCountEl.innerText = blurCount; enrollCountEl.innerText = enrollSamples.length;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

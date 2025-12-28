@@ -1,0 +1,22 @@
+# database.py
+import sqlite3
+import time
+import os
+
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'keystroke.db')
+
+def get_conn():
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    return conn
+
+def init_db():
+    conn = get_conn()
+    cur = conn.cursor()
+    schema_path = os.path.join(os.path.dirname(__file__), '..', 'schema.sql')
+    with open(schema_path, 'r', encoding='utf-8') as f:
+        cur.executescript(f.read())
+    conn.commit()
+    conn.close()
+
+def now_ts():
+    return int(time.time())

@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "question": "What is Python?",
+    "options": ["Snake", "Programming Language", "Car", "OS"],
+    "answer": 1,
+    "time": 10
+  },
+  {
+    "id": 2,
+    "question": "Which is mutable?",
+    "options": ["Tuple", "String", "List", "Int"],
+    "answer": 2,
+    "time": 10
+  }
+]

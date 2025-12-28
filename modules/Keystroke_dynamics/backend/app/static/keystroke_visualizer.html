@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Keystroke Visualizer — HR</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 18px; background:#f5f7fb; color:#111 }
+    .panel { background:white; padding:12px; border-radius:8px; box-shadow:0 6px 18px rgba(10,20,40,0.06); margin-bottom:12px; }
+    #events { height:200px; overflow:auto; font-family:monospace; background:#0b1220; color:#cfe8ff; padding:8px; border-radius:6px; }
+    canvas { width:100%; height:120px; border:1px solid #eee; background: #fff; display:block; }
+    .row { display:flex; gap:12px; align-items:center; }
+  </style>
+</head>
+<body>
+  <h2>Keystroke Visualizer (HR)</h2>
+  <div class="panel">
+    <div class="row">
+      <label>Session ID: <input id="sessionId" placeholder="paste session id here" style="width:380px"/></label>
+      <button id="loadBtn">Load Events</button>
+      <button id="scoreBtn">Compute Live Score</button>
+      <span id="scoreText" style="margin-left:12px;font-weight:600">Score: —</span>
+    </div>
+    <div style="margin-top:10px">
+      <canvas id="canvas" width="900" height="120"></canvas>
+    </div>
+    <div style="margin-top:10px" class="row">
+      <div style="flex:1">
+        <div class="small">Raw events</div>
+        <div id="events"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+async function fetchEvents(sessionId){
+  const r = await fetch('/interviewer/session/' + encodeURIComponent(sessionId) + '/keystrokes');
+  if (!r.ok) { const t = await r.text(); throw new Error(t||r.status); }
+  return r.json();
+}
+function drawTimeline(events){
+  const c = document.getElementById('canvas');
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  if (!events || events.length===0) return;
+  // compute min/max rts if present
+  const rts = events.map(x => (x.event && x.event.rts) ? x.event.rts : null).filter(x=>x!=null);
+  const min = Math.min(...rts), max = Math.max(...rts);
+  const span = max - min || 1;
+  // draw keydown markers in blue, paste in red, blur in orange
+  events.forEach((row,i)=>{
+    const e = row.event;
+    const x = (( (e.rts||0) - min) / span) * c.width;
+    if (e.type === 'keydown'){
+      ctx.fillStyle = '#0b69ff';
+      ctx.fillRect(x, 10, 2, c.height-20);
+    } else if (e.type === 'paste'){
+      ctx.fillStyle = '#c92a2a';
+      ctx.fillRect(x, 4, 4, c.height-8);
+    } else if (e.type === 'blur'){
+      ctx.fillStyle = '#ff8c00';
+      ctx.fillRect(x, 6, 3, c.height-12);
+    } else {
+      ctx.fillStyle = '#999';
+      ctx.fillRect(x, c.height/2, 1, 2);
+    }
+  });
+}
+
+document.getElementById('loadBtn').addEventListener('click', async ()=>{
+  const sid = document.getElementById('sessionId').value.trim();
+  if (!sid) return alert('enter session id');
+  try{
+    const data = await fetchEvents(sid);
+    const el = document.getElementById('events');
+    el.innerText = JSON.stringify(data.events.slice(-500), null, 2);
+    drawTimeline(data.events);
+    document.getElementById('scoreText').innerText = 'Score: —';
+  }catch(e){
+    alert('Failed: ' + e.message);
+  }
+});
+
+document.getElementById('scoreBtn').addEventListener('click', async ()=>{
+  const sid = document.getElementById('sessionId').value.trim();
+  if (!sid) return alert('enter session id');
+  // take last N events from keystroke_events via existing endpoint
+  try {
+    const data = await fetchEvents(sid);
+    const events = data.events.map(x => x.event);
+    // call score_live with candidate_id unknown; we send raw events and hope profile exists for candidate
+    const r = await fetch('/api/score_live', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ events: events.slice(-200) })
+    });
+    const j = await r.json();
+    if (!r.ok) alert('score error: ' + JSON.stringify(j));
+    document.getElementById('scoreText').innerText = 'Score: ' + (j.score==null ? j.verdict : (Math.round((j.score||0)*100)/100 + ' ('+j.verdict+')'));
+  } catch (e) {
+    alert('score failed: ' + e.message);
+  }
+});
+</script>
+</body>
+</html>

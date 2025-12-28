@@ -1,0 +1,337 @@
+# app/interview_routes.py
+from fastapi import APIRouter, HTTPException
+from typing import List
+import json, secrets
+
+from .database import get_conn, now_ts
+from .interview_models import (
+    QuestionCreate,
+    TestCreate,
+    CandidateCreate,
+    AssignTestRequest,
+)
+
+# This is what main.py imports:
+router = APIRouter(prefix="/hr", tags=["hr"])
+
+# ---------- SCHEMA (tables) ----------
+
+SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS candidates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,               -- link to keystroke.users.user_id
+    name TEXT,
+    email TEXT,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    text TEXT NOT NULL,
+    qtype TEXT NOT NULL,                 -- 'mcq', 'theory', 'code'
+    options_json TEXT,
+    correct_answer TEXT,
+    topic TEXT,
+    difficulty TEXT,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    time_limit_minutes INTEGER,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS test_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_id INTEGER NOT NULL,
+    question_id INTEGER NOT NULL,
+    order_index INTEGER NOT NULL,
+    weight REAL DEFAULT 1.0,
+    FOREIGN KEY(test_id) REFERENCES tests(id),
+    FOREIGN KEY(question_id) REFERENCES questions(id)
+);
+
+CREATE TABLE IF NOT EXISTS candidate_tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    candidate_id INTEGER NOT NULL,
+    test_id INTEGER NOT NULL,
+    status TEXT NOT NULL,               -- 'pending','in_progress','completed'
+    started_at INTEGER,
+    finished_at INTEGER,
+    final_score REAL,
+    keystroke_risk REAL,
+    overall_risk REAL,
+    token TEXT,                         -- unique link token
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY(candidate_id) REFERENCES candidates(id),
+    FOREIGN KEY(test_id) REFERENCES tests(id)
+);
+
+CREATE TABLE IF NOT EXISTS answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    candidate_test_id INTEGER NOT NULL,
+    question_id INTEGER NOT NULL,
+    answer_text TEXT,
+    is_correct INTEGER,
+    score REAL,
+    created_at INTEGER NOT NULL,
+    keystroke_session_id TEXT,
+    keystroke_score REAL,
+    keystroke_verdict TEXT,
+    paste_flag INTEGER,
+    FOREIGN KEY(candidate_test_id) REFERENCES candidate_tests(id),
+    FOREIGN KEY(question_id) REFERENCES questions(id)
+);
+"""
+
+def init_interview_schema():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.executescript(SCHEMA_SQL)
+    conn.commit()
+    conn.close()
+
+# run once when this module is imported
+init_interview_schema()
+
+# ---------- HR: QUESTIONS ----------
+
+@router.post("/questions")
+def create_question(q: QuestionCreate):
+    """Create a new question for the HR question bank."""
+    if q.qtype == "mcq" and not q.options:
+        raise HTTPException(status_code=400, detail="MCQ questions must have options")
+
+    options_json = json.dumps(q.options) if q.options is not None else None
+
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO questions(text, qtype, options_json, correct_answer, topic, difficulty, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            q.text,
+            q.qtype,
+            options_json,
+            q.correct_answer,
+            q.topic,
+            q.difficulty,
+            now_ts(),
+        ),
+    )
+    qid = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return {"id": qid, "message": "question_created"}
+
+@router.get("/questions")
+def list_questions():
+    """List all questions in the question bank."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT id, text, qtype, options_json, correct_answer, topic, difficulty, created_at "
+        "FROM questions ORDER BY id"
+    )
+    rows = cur.fetchall()
+    conn.close()
+
+    out = []
+    for r in rows:
+        options = json.loads(r[3]) if r[3] else None
+        out.append({
+            "id": r[0],
+            "text": r[1],
+            "qtype": r[2],
+            "options": options,
+            "correct_answer": r[4],
+            "topic": r[5],
+            "difficulty": r[6],
+            "created_at": r[7],
+        })
+    return out
+
+# ---------- HR: TESTS ----------
+
+@router.post("/tests")
+def create_test(t: TestCreate):
+    """Create a test composed of existing questions."""
+    if not t.question_ids:
+        raise HTTPException(status_code=400, detail="question_ids cannot be empty")
+
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO tests(name, description, time_limit_minutes, created_at) VALUES (?, ?, ?, ?)",
+        (t.name, t.description or "", t.time_limit_minutes or 0, now_ts()),
+    )
+    test_id = cur.lastrowid
+
+    # link selected questions to this test
+    for idx, qid in enumerate(t.question_ids):
+        cur.execute(
+            "INSERT INTO test_questions(test_id, question_id, order_index, weight) VALUES (?, ?, ?, ?)",
+            (test_id, qid, idx, 1.0),
+        )
+
+    conn.commit()
+    conn.close()
+    return {"id": test_id, "message": "test_created", "question_ids": t.question_ids}
+
+@router.get("/tests")
+def list_tests():
+    """List all tests with their question IDs and order."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, description, time_limit_minutes, created_at FROM tests ORDER BY id")
+    tests_rows = cur.fetchall()
+
+    out = []
+    for t in tests_rows:
+        cur.execute(
+            "SELECT question_id, order_index, weight FROM test_questions WHERE test_id = ? ORDER BY order_index",
+            (t[0],),
+        )
+        qrows = cur.fetchall()
+        questions = [
+            {"question_id": qr[0], "order_index": qr[1], "weight": qr[2]}
+            for qr in qrows
+        ]
+        out.append({
+            "id": t[0],
+            "name": t[1],
+            "description": t[2],
+            "time_limit_minutes": t[3],
+            "created_at": t[4],
+            "questions": questions,
+        })
+
+    conn.close()
+    return out
+
+# ---------- HR: CANDIDATES ----------
+
+@router.post("/candidates")
+def create_candidate(c: CandidateCreate):
+    """
+    Register a candidate and link them to an existing keystroke user_id.
+    HR will normally paste user_id from /api/create_user.
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO candidates(user_id, name, email, created_at) VALUES (?, ?, ?, ?)",
+        (c.user_id, c.name or "", c.email or "", now_ts()),
+    )
+    cid = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return {"id": cid, "message": "candidate_created"}
+
+@router.get("/candidates")
+def list_candidates():
+    """List all registered candidates."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT id, user_id, name, email, created_at FROM candidates ORDER BY id")
+    rows = cur.fetchall()
+    conn.close()
+
+    return [
+        {
+            "id": r[0],
+            "user_id": r[1],
+            "name": r[2],
+            "email": r[3],
+            "created_at": r[4],
+        }
+        for r in rows
+    ]
+
+# ---------- HR: ASSIGN TEST TO CANDIDATE ----------
+
+@router.post("/assign_test")
+def assign_test(req: AssignTestRequest):
+    """
+    Assign a test to a candidate.
+    Returns a unique token that the candidate will use to start the interview.
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # ensure candidate exists
+    cur.execute("SELECT id FROM candidates WHERE id = ?", (req.candidate_id,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="candidate not found")
+
+    # ensure test exists
+    cur.execute("SELECT id FROM tests WHERE id = ?", (req.test_id,))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="test not found")
+
+    # generate token
+    token = secrets.token_urlsafe(16)
+
+    cur.execute(
+        """
+        INSERT INTO candidate_tests(
+            candidate_id, test_id, status,
+            started_at, finished_at, final_score,
+            keystroke_risk, overall_risk, token, created_at
+        )
+        VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, ?, ?)
+        """,
+        (req.candidate_id, req.test_id, "pending", token, now_ts()),
+    )
+    ct_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+
+    return {
+        "candidate_test_id": ct_id,
+        "token": token,
+        "message": "test_assigned"
+    }
+
+@router.get("/candidate_tests")
+def list_candidate_tests():
+    """List all candidate-test assignments."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT ct.id, ct.candidate_id, c.name, c.email,
+               ct.test_id, t.name,
+               ct.status, ct.token, ct.created_at
+        FROM candidate_tests ct
+        JOIN candidates c ON c.id = ct.candidate_id
+        JOIN tests t ON t.id = ct.test_id
+        ORDER BY ct.id
+        """
+    )
+    rows = cur.fetchall()
+    conn.close()
+
+    out = []
+    for r in rows:
+        out.append({
+            "id": r[0],
+            "candidate_id": r[1],
+            "candidate_name": r[2],
+            "candidate_email": r[3],
+            "test_id": r[4],
+            "test_name": r[5],
+            "status": r[6],
+            "token": r[7],
+            "created_at": r[8],
+        })
+    return out

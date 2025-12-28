@@ -1,0 +1,131 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List, Dict, Any
+from uuid import uuid4
+from pathlib import Path
+import json, statistics, time
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "server_data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+ENROLLMENTS_FILE = DATA_DIR / "enrollments.json"
+TEMPLATES_FILE = DATA_DIR / "templates.json"
+def load_json(path):
+    if not path.exists(): return {}
+    with path.open("r", encoding="utf8") as f: return json.load(f)
+def save_json(path, obj):
+    with path.open("w", encoding="utf8") as f: json.dump(obj, f, indent=2)
+if not ENROLLMENTS_FILE.exists(): save_json(ENROLLMENTS_FILE, {})
+if not TEMPLATES_FILE.exists(): save_json(TEMPLATES_FILE, {})
+
+def extract_features_from_events(events: List[Dict[str,Any]]):
+    events = sorted(events, key=lambda e: e.get("ts",0))
+    last_down = {}
+    holds = []
+    for e in events:
+        t = e.get("ts")
+        if e.get("type","").lower().startswith("keydown"):
+            last_down[e.get("key")] = t
+        elif e.get("type","").lower().startswith("keyup"):
+            k = e.get("key")
+            if k in last_down and last_down[k] is not None and t is not None:
+                holds.append(t - last_down[k]); del last_down[k]
+    prev_down = None; dd = []
+    for e in events:
+        if e.get("type","").lower().startswith("keydown"):
+            if prev_down is not None and e.get("ts") is not None: dd.append(e.get("ts") - prev_down)
+            prev_down = e.get("ts")
+    mean_hold = statistics.mean(holds) if len(holds) else None
+    mean_dd = statistics.mean(dd) if len(dd) else None
+    return {"mean_hold": mean_hold, "mean_dd": mean_dd, "num_events": len(events)}
+
+def compute_template_from_samples(samples: List[List[Dict]]):
+    if not samples: return None
+    feats = [extract_features_from_events(s) for s in samples]
+    def avg(field):
+        vals = [f[field] for f in feats if f.get(field) is not None]
+        return statistics.mean(vals) if vals else None
+    return {"mean_hold": avg("mean_hold"), "mean_dd": avg("mean_dd"), "_num_samples": len(samples)}
+
+def similarity_score(features, template):
+    if not template or template.get("mean_hold") is None or template.get("mean_dd") is None:
+        return None
+    d1 = abs((features.get("mean_hold") or 0) - template.get("mean_hold")) / (template.get("mean_hold") or 1)
+    d2 = abs((features.get("mean_dd") or 0) - template.get("mean_dd")) / (template.get("mean_dd") or 1)
+    score = max(0.0, 1.0 - (0.6 * d1 + 0.4 * d2))
+    return int(round(score * 100))
+
+app = FastAPI(title="Keystroke Demo Minimal API")
+
+class StartIn(BaseModel):
+    token: str
+class EnrollIn(BaseModel):
+    token: str
+    events: List[Dict[str,Any]]
+class EnrollFinishIn(BaseModel):
+    token: str
+class SubmitIn(BaseModel):
+    session_id: str = None
+    question_id: int = None
+    final_text: str = None
+    token: str = None
+    events: List[Dict[str,Any]]
+
+@app.post("/candidate/start")
+def candidate_start(body: StartIn):
+    sid = str(uuid4())
+    return {"session_id": sid, "token": body.token, "questions": [{"question_id":1,"text":"Please introduce yourself."}]}
+
+@app.post("/candidate/enroll")
+def candidate_enroll(body: EnrollIn):
+    enrollments = load_json(ENROLLMENTS_FILE)
+    arr = enrollments.get(body.token, [])
+    arr.append(body.events)
+    enrollments[body.token] = arr
+    save_json(ENROLLMENTS_FILE, enrollments)
+    return {"ok": True, "samples_count": len(arr)}
+
+@app.post("/candidate/enroll_finish")
+def candidate_enroll_finish(body: EnrollFinishIn):
+    enrollments = load_json(ENROLLMENTS_FILE)
+    token_samples = enrollments.get(body.token, [])
+    if not token_samples:
+        raise HTTPException(status_code=400, detail="No enrollment samples for token")
+    template = compute_template_from_samples(token_samples)
+    templates = load_json(TEMPLATES_FILE)
+    templates[body.token] = template
+    save_json(TEMPLATES_FILE, templates)
+    return {"ok": True, "template": template}
+
+@app.post("/candidate/submit_answer")
+def candidate_submit_answer(body: SubmitIn):
+    templates = load_json(TEMPLATES_FILE)
+    template = templates.get(body.token)
+    features = extract_features_from_events(body.events or [])
+    score = similarity_score(features, template)
+    verdict = "No template" if score is None else ("genuine" if score >= 60 else "imposter")
+    return {"features": features, "score": score, "authenticity": verdict}
+
+@app.get("/ping")
+def ping():
+    return {"status":"ok", "time": int(time.time())}
+
+
+from fastapi.responses import FileResponse
+
+_demo_abs_path = r"C:\Users\Dell\Desktop\Keystroke_dynamics\backend\app\static\keystroke_demo.html"
+
+@app.get("/keystroke_demo.html")
+def _serve_demo_root():
+    import os
+    if os.path.exists(_demo_abs_path):
+        return FileResponse(_demo_abs_path)
+    raise HTTPException(status_code=404, detail="Demo HTML not found at expected path")
+
+@app.get("/static/keystroke_demo.html")
+def _serve_demo_static_path():
+    import os
+    if os.path.exists(_demo_abs_path):
+        return FileResponse(_demo_abs_path)
+    raise HTTPException(status_code=404, detail="Demo HTML not found at expected path")
+\#\ ---\ START:\ compatibility\ alias\ for\ UI\ finish\ button\ \(replaced\ safely\)\ ---\nfrom\ fastapi\ import\ Request\ as\ _Request\n\n@app\.post\("/candidate/finish"\)\nasync\ def\ _compat_candidate_finish\(req:\ _Request\):\n\ \ \ \ """\n\ \ \ \ Compatibility\ wrapper:\ accept\ \{"session_id":\ "\.\.\."}\ posted\ by\ the\ demo\ UI\n\ \ \ \ and\ return\ \{"status":"ok","session_id":\.\.\.,\ "score":\.\.\.,\ "authenticity":\.\.\.}\n\ \ \ \ Uses\ existing\ session_service\.finish_session\(\)\ under\ the\ hood\ but\ imports\n\ \ \ \ the\ DB\ module\ inside\ the\ function\ to\ avoid\ name\ resolution\ issues\.\n\ \ \ \ """\n\ \ \ \ try:\n\ \ \ \ \ \ \ \ body\ =\ await\ req\.json\(\)\n\ \ \ \ except\ Exception:\n\ \ \ \ \ \ \ \ raise\ HTTPException\(status_code=400,\ detail="invalid\ json"\)\n\n\ \ \ \ session_id\ =\ None\n\ \ \ \ if\ isinstance\(body,\ dict\):\n\ \ \ \ \ \ \ \ session_id\ =\ body\.get\("session_id"\)\ or\ body\.get\("session"\)\n\ \ \ \ if\ not\ session_id:\n\ \ \ \ \ \ \ \ raise\ HTTPException\(status_code=400,\ detail="session_id\ required"\)\n\n\ \ \ \ db\ =\ None\n\ \ \ \ try:\n\ \ \ \ \ \ \ \ \#\ import\ DB\ module\ locally\ so\ we\ don't\ depend\ on\ a\ global\ name\n\ \ \ \ \ \ \ \ import\ app\.database\ as\ _database\n\ \ \ \ \ \ \ \ db\ =\ _database\.get_conn\(\)\n\ \ \ \ \ \ \ \ row\ =\ db\.execute\("SELECT\ \*\ FROM\ sessions\ WHERE\ session_id\ =\ \?\ LIMIT\ 1",\ \(session_id,\)\)\.fetchone\(\)\n\ \ \ \ \ \ \ \ if\ not\ row:\n\ \ \ \ \ \ \ \ \ \ \ \ raise\ HTTPException\(status_code=404,\ detail="session\ not\ found"\)\n\ \ \ \ \ \ \ \ score,\ authenticity\ =\ session_service\.finish_session\(db,\ session_id\)\n\ \ \ \ \ \ \ \ return\ \{"status":\ "ok",\ "session_id":\ session_id,\ "score":\ score,\ "authenticity":\ authenticity}\n\ \ \ \ except\ HTTPException:\n\ \ \ \ \ \ \ \ raise\n\ \ \ \ except\ Exception\ as\ e:\n\ \ \ \ \ \ \ \ \#\ return\ a\ 500\ with\ the\ error\ message\n\ \ \ \ \ \ \ \ raise\ HTTPException\(status_code=500,\ detail=str\(e\)\)\n\ \ \ \ finally:\n\ \ \ \ \ \ \ \ try:\n\ \ \ \ \ \ \ \ \ \ \ \ if\ db:\n\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ db\.close\(\)\n\ \ \ \ \ \ \ \ except:\n\ \ \ \ \ \ \ \ \ \ \ \ pass\n\#\ ---\ END:\ compatibility\ alias\ replaced\ ---
+
